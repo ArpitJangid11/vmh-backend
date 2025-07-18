@@ -8,6 +8,7 @@ import {
   getAllAdminSurveys,
   updateSurvey,
   toggleSurveyActiveStatus,
+  changeUserRole,
 } from "../controllers/adminController.js";
 
 import { protect, isAdmin } from "../middleware/authMiddleware.js";
@@ -19,6 +20,7 @@ router.use(protect, isAdmin);
 router.get("/users", getAllUsers);
 router.get("/rewards", getAllRewards);
 router.put("/rewards/:id", updateRewardStatus);
+router.put("/users/:id/role", changeUserRole);
 
 router.post("/surveys", createSurvey);
 router.get("/surveys", getAllAdminSurveys);
