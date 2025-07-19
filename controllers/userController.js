@@ -36,6 +36,17 @@ export const updateProfile = async (req, res) => {
       country,
       jobTitle,
       industry,
+      DOB,
+      marriageStatus,
+      incomeBeforeTax,
+      totalMembers,
+      children,
+      retiredPerson,
+      higherDegree,
+      employmentStatus,
+      primayBusiness,
+      no_employ,
+      revenueOrganization,
     } = req.body;
 
     // Only allow selected fields to be updated
@@ -47,6 +58,17 @@ export const updateProfile = async (req, res) => {
     if (country) user.country = country;
     if (jobTitle) user.jobTitle = jobTitle;
     if (industry) user.industry = industry;
+    if (DOB) user.DOB = DOB;
+    if (marriageStatus) user.marriageStatus = marriageStatus;
+    if (incomeBeforeTax) user.incomeBeforeTax = incomeBeforeTax;
+    if (totalMembers) user.totalMembers = totalMembers;
+    if (children) user.children = children;
+    if (retiredPerson !== undefined) user.retiredPerson = retiredPerson;
+    if (higherDegree !== undefined) user.higherDegree = higherDegree;
+    if (employmentStatus) user.employmentStatus = employmentStatus;
+    if (primayBusiness) user.primayBusiness = primayBusiness;
+    if (no_employ) user.no_employ = no_employ;
+    if (revenueOrganization) user.revenueOrganization = revenueOrganization;
 
     await user.save();
 
@@ -63,6 +85,17 @@ export const updateProfile = async (req, res) => {
         jobTitle: user.jobTitle,
         industry: user.industry,
         role: user.role,
+        DOB: user.DOB,
+        marriageStatus: user.marriageStatus,
+        incomeBeforeTax: user.incomeBeforeTax,
+        totalMembers: user.totalMembers,
+        children: user.children,
+        retiredPerson: user.retiredPerson,
+        higherDegree: user.higherDegree,
+        employmentStatus: user.employmentStatus,
+        primayBusiness: user.primayBusiness,
+        no_employ: user.no_employ,
+        revenueOrganization: user.revenueOrganization,
       },
     });
   } catch (err) {

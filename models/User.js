@@ -33,6 +33,58 @@ const User = sequelize.define(
     isPhoneVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
     otp: { type: DataTypes.STRING },
     googleId: { type: DataTypes.STRING },
+    address: { type: DataTypes.STRING, allowNull: false },
+    city: { type: DataTypes.STRING, allowNull: false },
+    zipCode: { type: DataTypes.STRING, allowNull: false },
+    isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
+    referredBy: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+
+    DOB: {
+      type: DataTypes.DATE,
+      allowNull: true, // change from false to true
+    },
+    marriageStatus: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "Single",
+    },
+    incomeBeforeTax: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 0,
+    },
+    totalMembers: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: 1,
+    },
+    children: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    retiredPerson: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "null",
+    },
+    higherDegree: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "null",
+    },
+    employmentStatus: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "Unemployed",
+    },
+    primayBusiness: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: "None",
+    },
+    no_employ: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
+    revenueOrganization: {
+      type: DataTypes.STRING,
+      allowNull: false,
+      defaultValue: 0,
+    },
   },
   {
     tableName: "Users",
