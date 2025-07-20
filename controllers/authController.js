@@ -182,3 +182,57 @@ export const login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const sendForgotPasswordOtp = async (req, res) => {
+  const { email } = req.body;
+  if (!email) return res.status(400).json({ message: "Email is required" });
+
+  try {
+    const user = await User.findOne({ where: { email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    user.otp = otp;
+    await user.save();
+
+    await sendMail({
+      to: email,
+      subject: "Password Reset OTP",
+      text: `Your password reset OTP is: ${otp}`,
+    });
+
+    res.json({ message: "OTP sent to email for password reset" });
+  } catch (err) {
+    console.error("Reset request error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+// 🔁 Reset Password with OTP
+export const resetPassword = async (req, res) => {
+  const { email, otp, newPassword } = req.body;
+
+  if (!email || !otp || !newPassword) {
+    return res
+      .status(400)
+      .json({ message: "Email, OTP, and new password required" });
+  }
+
+  try {
+    const user = await User.findOne({ where: { email } });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if (user.otp !== otp)
+      return res.status(400).json({ message: "Invalid OTP" });
+
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+    user.password = hashedPassword;
+    user.otp = null; // clear OTP
+    await user.save();
+
+    res.json({ message: "Password reset successfully" });
+  } catch (err) {
+    console.error("Password reset error:", err);
+    res.status(500).json({ message: "Server error" });
+  }
+};
