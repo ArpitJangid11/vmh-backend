@@ -177,3 +177,23 @@ export const changeUserRole = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
+
+export const updateUserIsActiveStatus = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const user = await User.findByPk(id);
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    user.isActive = !user.isActive; // Toggle status
+    await user.save();
+
+    res.status(200).json({
+      message: `User ${user.isActive ? "unblocked" : "blocked"}`,
+      user,
+    });
+  } catch (error) {
+    console.error("User status toggle error:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
