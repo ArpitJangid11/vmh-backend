@@ -92,3 +92,34 @@ const User = sequelize.define(
 );
 
 export default User;
+
+export const getUserSurveyHistory = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const history = await Response.findAll({
+      where: { userId },
+      include: [
+        {
+          model: Survey,
+          attributes: ["title", "category", "rewardPoints"],
+        },
+      ],
+    });
+
+    const result = history.map((entry) => ({
+      surveyId: entry.surveyId,
+      title: entry.Survey?.title,
+      category: entry.Survey?.category,
+      rewardPoints: entry.Survey?.rewardPoints,
+      status: entry.isCompleted ? "Completed" : "In Progress",
+      progress: entry.progress,
+      submittedAt: entry.updatedAt,
+    }));
+
+    res.json(result);
+  } catch (err) {
+    console.error("Survey History Error:", err);
+    res.status(500).json({ message: "Failed to fetch survey history." });
+  }
+};
