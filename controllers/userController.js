@@ -4,21 +4,16 @@ import bcrypt from "bcryptjs";
 
 export const getProfile = async (req, res) => {
   try {
-    console.log("User ID from token:", req.user.id); //  Debug log
-
     const user = await User.findByPk(req.user.id, {
       attributes: { exclude: ["password", "otp"] },
     });
 
-    if (!user) {
-      return res
-        .status(404)
-        .json({ message: `User ID ${req.user.id} not found` });
-    }
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    res.json(user);
+    res.status(200).json(user);
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    console.error("Get Profile Error:", err);
+    res.status(500).json({ message: "Internal server error" });
   }
 };
 
