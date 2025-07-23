@@ -11,6 +11,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export const sendMail = async ({ to, subject, text, html }) => {
+  console.log("📨 Sending email to:", to);
   const mailOptions = {
     from: `"VMH GROUPS MR" <${process.env.EMAIL_USER}>`,
     to,

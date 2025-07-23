@@ -79,12 +79,15 @@ export const register = async (req, res) => {
       zipCode,
       referredBy,
     });
-
-    await sendMail({
-      to: email,
-      subject: "Verify Your Email",
-      text: `Your OTP is: ${otp}`,
+    setImmediate(() => {
+      sendMail({
+        to: email,
+        subject: "Verify Your Email",
+        text: `Your OTP is: ${otp}`,
+      });
     });
+    // await sendMail({
+    // });
 
     res.status(201).json({ message: "User registered. OTP sent to email." });
   } catch (err) {
@@ -125,13 +128,27 @@ export const verifyOTP = async (req, res) => {
 // 🔓 LOGIN with token
 export const login = async (req, res) => {
   const { email, password } = req.body;
+  const start = Date.now();
 
   try {
-    const user = await User.findOne({ where: { email } });
+    const user = await User.findOne({
+      where: { email },
+      attributes: [
+        "id",
+        "email",
+        "password",
+        "role",
+        "fullName",
+        "isEmailVerified",
+      ],
+    });
+    console.log("User fetched:", Date.now() - start, "ms");
 
     if (!user) return res.status(404).json({ message: "User not found" });
 
     const match = await bcrypt.compare(password, user.password);
+    console.log("Password compared:", Date.now() - start, "ms");
+
     if (!match) return res.status(401).json({ message: "Invalid credentials" });
 
     if (!user.isEmailVerified) {
@@ -145,6 +162,7 @@ export const login = async (req, res) => {
       process.env.JWT_SECRET,
       { expiresIn: "7d" }
     );
+    console.log("Token generated:", Date.now() - start, "ms");
 
     res.json({
       token,
