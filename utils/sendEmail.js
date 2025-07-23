@@ -5,13 +5,24 @@ dotenv.config();
 const transporter = nodemailer.createTransport({
   service: "gmail",
   auth: {
-    user: process.env.EMAIL_USER, // your Gmail
-    pass: process.env.EMAIL_PASS, // your Gmail App Password
+    user: process.env.EMAIL_USER, // Gmail address
+    pass: process.env.EMAIL_PASS, // App-specific password (not Gmail login)
   },
 });
 
+/**
+ * Send an email using Nodemailer
+ * @param {Object} options
+ * @param {string} options.to - Recipient email
+ * @param {string} options.subject - Email subject
+ * @param {string} [options.text] - Plain text content
+ * @param {string} [options.html] - Optional HTML content
+ */
 export const sendMail = async ({ to, subject, text, html }) => {
-  console.log("📨 Sending email to:", to);
+  if (!to || !subject || (!text && !html)) {
+    throw new Error("Missing required email parameters.");
+  }
+
   const mailOptions = {
     from: `"VMH GROUPS MR" <${process.env.EMAIL_USER}>`,
     to,
@@ -25,7 +36,7 @@ export const sendMail = async ({ to, subject, text, html }) => {
     console.log("✅ Email sent:", info.response);
     return info;
   } catch (error) {
-    console.error("❌ Email error:", error);
-    throw error;
+    console.error("❌ Failed to send email:", error.message);
+    throw new Error("Failed to send email");
   }
 };
