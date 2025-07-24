@@ -131,6 +131,7 @@ export const login = async (req, res) => {
   const start = Date.now();
 
   try {
+    // 🔍 Step 1: Find user
     const user = await User.findOne({
       where: { email },
       attributes: [
@@ -142,28 +143,46 @@ export const login = async (req, res) => {
         "isEmailVerified",
       ],
     });
-    console.log("User fetched:", Date.now() - start, "ms");
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    console.log("User fetch time:", Date.now() - start, "ms");
 
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    // ❗ Guard against missing password (avoids bcrypt crash)
+    if (!user.password) {
+      return res.status(500).json({ message: "User password missing" });
+    }
+
+    // 🔐 Step 2: Compare password
     const match = await bcrypt.compare(password, user.password);
-    console.log("Password compared:", Date.now() - start, "ms");
+    console.log("Password compare time:", Date.now() - start, "ms");
 
-    if (!match) return res.status(401).json({ message: "Invalid credentials" });
+    if (!match) {
+      return res.status(401).json({ message: "Invalid credentials" });
+    }
 
+    // 🛑 Step 3: Check email verification
     if (!user.isEmailVerified) {
       return res
         .status(403)
         .json({ message: "Please verify your email first" });
     }
 
-    const token = jwt.sign(
-      { id: user.id, role: user.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "7d" }
-    );
-    console.log("Token generated:", Date.now() - start, "ms");
+    // 🔑 Step 4: Generate JWT token
+    const JWT_SECRET = process.env.JWT_SECRET;
+    if (!JWT_SECRET) {
+      throw new Error("Missing JWT_SECRET in environment");
+    }
 
+    const token = jwt.sign({ id: user.id, role: user.role }, JWT_SECRET, {
+      expiresIn: "7d",
+    });
+
+    console.log("Token generated in:", Date.now() - start, "ms");
+
+    // ✅ Step 5: Return response
     res.json({
       token,
       user: {
@@ -174,8 +193,8 @@ export const login = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ Login error:", err.stack || err.message || err);
+    res.status(500).json({ message: "Server error during login" });
   }
 };
 
@@ -231,4 +250,26 @@ export const resetPassword = async (req, res) => {
     console.error("Password reset error:", err);
     res.status(500).json({ message: "Server error" });
   }
+};
+
+// controllers/authController.js
+export const resendOtp = async (req, res) => {
+  const { email } = req.body;
+  const user = await User.findOne({ where: { email } });
+
+  if (!user) return res.status(404).json({ message: "User not found" });
+  if (user.isEmailVerified)
+    return res.status(400).json({ message: "Email already verified" });
+
+  const newOtp = Math.floor(100000 + Math.random() * 900000);
+  user.otp = newOtp;
+  await user.save();
+
+  await sendMail({
+    to: email,
+    subject: "Verify Your Email",
+    text: `Your OTP is: ${newOtp}`,
+  });
+
+  res.json({ message: "OTP resent to email" });
 };
