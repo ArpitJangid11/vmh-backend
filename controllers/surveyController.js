@@ -1,10 +1,29 @@
 import { Survey, Response, User } from "../models/index.js";
+import { Op } from "sequelize";
 
 export const listSurveys = async (req, res) => {
   try {
-    const surveys = await Survey.findAll({ where: { isActive: true } });
+    // ✅ Get all surveys user has already opened/submitted
+    const responses = await Response.findAll({
+      where: { userId: req.user.id },
+      attributes: ["surveyId"],
+    });
+
+    const seenSurveyIds = responses.map((r) => r.surveyId);
+
+    // ✅ Fetch only active surveys that user has NOT seen
+    const surveys = await Survey.findAll({
+      where: {
+        isActive: true,
+        survey_id: {
+          [Op.notIn]: seenSurveyIds.length ? seenSurveyIds : [0], // exclude seen
+        },
+      },
+    });
+
     res.json(surveys);
   } catch (err) {
+    console.error("Error listing surveys:", err);
     res.status(500).json({ error: err.message });
   }
 };

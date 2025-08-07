@@ -139,6 +139,7 @@ export const login = async (req, res) => {
         "email",
         "password",
         "role",
+        "jobTitle",
         "fullName",
         "isEmailVerified",
       ],
@@ -190,6 +191,7 @@ export const login = async (req, res) => {
         fullName: user.fullName,
         email: user.email,
         role: user.role,
+        jobTitle: user.jobTitle,
       },
     });
   } catch (err) {
