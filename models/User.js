@@ -33,9 +33,9 @@ const User = sequelize.define(
     isPhoneVerified: { type: DataTypes.BOOLEAN, defaultValue: false },
     otp: { type: DataTypes.STRING },
     googleId: { type: DataTypes.STRING },
-    address: { type: DataTypes.STRING, allowNull: false },
-    city: { type: DataTypes.STRING, allowNull: false },
-    zipCode: { type: DataTypes.STRING, allowNull: false },
+    address: { type: DataTypes.STRING },
+    city: { type: DataTypes.STRING },
+    zipCode: { type: DataTypes.STRING },
     isActive: { type: DataTypes.BOOLEAN, allowNull: false, defaultValue: true },
     referredBy: { type: DataTypes.INTEGER, allowNull: false, defaultValue: 0 },
 
