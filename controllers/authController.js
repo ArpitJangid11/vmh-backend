@@ -2,39 +2,13 @@ import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import { User } from "../models/index.js";
 import { sendMail } from "../utils/sendEmail.js";
-// import sendSMS from "../utils/sendSMS.js"; // optional
 
-// 🔐 REGISTER with OTP
+//  REGISTER with OTP
 export const register = async (req, res) => {
-  const {
-    fullName,
-    email,
-    password,
-    phone,
-    age,
-    gender,
-    country,
-    jobTitle,
-    industry,
-    consent,
-    preferences = [], // ✅ default to array if undefined
-    role,
-    DOB,
-    marriageStatus,
-    incomeBeforeTax,
-    totalMembers,
-    children,
-    retiredPerson,
-    higherDegree,
-    employmentStatus,
-    primayBusiness,
-    no_employ,
-    revenueOrganization,
-    address,
-    city,
-    zipCode,
-    referredBy,
-  } = req.body;
+  const { fullName, password, phone, consent, role, referredBy } = req.body;
+
+  // normalize email
+  const email = req.body.email?.toLowerCase();
 
   try {
     const userExists = await User.findOne({ where: { email } });
@@ -54,31 +28,12 @@ export const register = async (req, res) => {
       email,
       password: hashedPassword,
       phone,
-      age,
-      gender,
-      country,
-      jobTitle,
-      industry,
       consent,
-      preferences: Array.isArray(preferences) ? preferences : [],
       role,
       otp,
-      DOB: DOB && !isNaN(Date.parse(DOB)) ? new Date(DOB) : null,
-      marriageStatus,
-      incomeBeforeTax,
-      totalMembers,
-      children,
-      retiredPerson,
-      higherDegree,
-      employmentStatus,
-      primayBusiness,
-      no_employ,
-      revenueOrganization,
-      address,
-      city,
-      zipCode,
       referredBy,
     });
+
     setImmediate(() => {
       sendMail({
         to: email,
@@ -86,8 +41,6 @@ export const register = async (req, res) => {
         text: `Your OTP is: ${otp}`,
       });
     });
-    // await sendMail({
-    // });
 
     res.status(201).json({ message: "User registered. OTP sent to email." });
   } catch (err) {
@@ -96,7 +49,7 @@ export const register = async (req, res) => {
   }
 };
 
-// ✅ VERIFY OTP
+//  VERIFY OTP
 export const verifyOTP = async (req, res) => {
   const email = req.body.email?.toLowerCase();
   const otp = req.body.otp;
@@ -107,14 +60,13 @@ export const verifyOTP = async (req, res) => {
 
   try {
     const user = await User.findOne({ where: { email } });
-
     if (!user) return res.status(404).json({ message: "User not found" });
 
     if (user.otp !== otp)
       return res.status(400).json({ message: "Invalid OTP" });
 
     user.isEmailVerified = true;
-    user.isPhoneVerified = !!user.phone; // mark true if phone exists
+    user.isPhoneVerified = !!user.phone;
     user.otp = null;
     await user.save();
 
@@ -125,13 +77,13 @@ export const verifyOTP = async (req, res) => {
   }
 };
 
-// 🔓 LOGIN with token
+//  LOGIN with token
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const email = req.body.email?.toLowerCase();
+  const { password } = req.body;
   const start = Date.now();
 
   try {
-    // 🔍 Step 1: Find user
     const user = await User.findOne({
       where: { email },
       attributes: [
@@ -141,6 +93,7 @@ export const login = async (req, res) => {
         "role",
         "jobTitle",
         "fullName",
+        "isActive",
         "isEmailVerified",
       ],
     });
@@ -151,12 +104,10 @@ export const login = async (req, res) => {
       return res.status(404).json({ message: "User not found" });
     }
 
-    // ❗ Guard against missing password (avoids bcrypt crash)
     if (!user.password) {
       return res.status(500).json({ message: "User password missing" });
     }
 
-    // 🔐 Step 2: Compare password
     const match = await bcrypt.compare(password, user.password);
     console.log("Password compare time:", Date.now() - start, "ms");
 
@@ -164,14 +115,17 @@ export const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    // 🛑 Step 3: Check email verification
     if (!user.isEmailVerified) {
       return res
         .status(403)
         .json({ message: "Please verify your email first" });
     }
+    if (!user.isActive) {
+      return res
+        .status(403)
+        .json({ message: "You are blocked. Please Contact to our team." });
+    }
 
-    // 🔑 Step 4: Generate JWT token
     const JWT_SECRET = process.env.JWT_SECRET;
     if (!JWT_SECRET) {
       throw new Error("Missing JWT_SECRET in environment");
@@ -183,7 +137,6 @@ export const login = async (req, res) => {
 
     console.log("Token generated in:", Date.now() - start, "ms");
 
-    // ✅ Step 5: Return response
     res.json({
       token,
       user: {
@@ -195,13 +148,14 @@ export const login = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Login error:", err.stack || err.message || err);
+    console.error(" Login error:", err.stack || err.message || err);
     res.status(500).json({ message: "Server error during login" });
   }
 };
 
+//  Forgot Password: Send OTP
 export const sendForgotPasswordOtp = async (req, res) => {
-  const { email } = req.body;
+  const email = req.body.email?.toLowerCase();
   if (!email) return res.status(400).json({ message: "Email is required" });
 
   try {
@@ -225,9 +179,10 @@ export const sendForgotPasswordOtp = async (req, res) => {
   }
 };
 
-// 🔁 Reset Password with OTP
+//  Reset Password with OTP
 export const resetPassword = async (req, res) => {
-  const { email, otp, newPassword } = req.body;
+  const email = req.body.email?.toLowerCase();
+  const { otp, newPassword } = req.body;
 
   if (!email || !otp || !newPassword) {
     return res
@@ -237,14 +192,14 @@ export const resetPassword = async (req, res) => {
 
   try {
     const user = await User.findOne({ where: { email } });
-
     if (!user) return res.status(404).json({ message: "User not found" });
+
     if (user.otp !== otp)
       return res.status(400).json({ message: "Invalid OTP" });
 
     const hashedPassword = await bcrypt.hash(newPassword, 10);
     user.password = hashedPassword;
-    user.otp = null; // clear OTP
+    user.otp = null;
     await user.save();
 
     res.json({ message: "Password reset successfully" });
@@ -254,16 +209,16 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// controllers/authController.js
+//  Resend OTP
 export const resendOtp = async (req, res) => {
-  const { email } = req.body;
+  const email = req.body.email?.toLowerCase();
   const user = await User.findOne({ where: { email } });
 
   if (!user) return res.status(404).json({ message: "User not found" });
   if (user.isEmailVerified)
     return res.status(400).json({ message: "Email already verified" });
 
-  const newOtp = Math.floor(100000 + Math.random() * 900000);
+  const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
   user.otp = newOtp;
   await user.save();
 

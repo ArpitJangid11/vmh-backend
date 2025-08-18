@@ -1,4 +1,5 @@
 import { User, Reward, Survey } from "../models/index.js";
+import { Op } from "sequelize";
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -78,7 +79,7 @@ export const getAllAdminSurveys = async (req, res) => {
     const adminId = req.user.id; // extracted from JWT
 
     const surveys = await Survey.findAll({
-      where: { user_id: adminId },
+      where: { user_id: adminId, status: { [Op.ne]: "deleted" } },
       order: [["createdAt", "DESC"]],
     });
 
@@ -195,5 +196,71 @@ export const updateUserIsActiveStatus = async (req, res) => {
   } catch (error) {
     console.error("User status toggle error:", error);
     res.status(500).json({ message: "Server error" });
+  }
+};
+
+// Pause survey
+export const pauseSurvey = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const survey = await Survey.findByPk(id);
+    if (!survey) return res.status(404).json({ error: "Survey not found" });
+
+    survey.status = "paused";
+    await survey.save();
+    res.json({ message: "Survey paused successfully", survey });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Resume survey
+export const resumeSurvey = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const survey = await Survey.findByPk(id);
+    if (!survey) return res.status(404).json({ error: "Survey not found" });
+
+    if (survey.status !== "paused") {
+      return res
+        .status(400)
+        .json({ error: "Only paused surveys can be resumed" });
+    }
+
+    survey.status = "active";
+    await survey.save();
+    res.json({ message: "Survey resumed successfully", survey });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// End survey
+export const endSurvey = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const survey = await Survey.findByPk(id);
+    if (!survey) return res.status(404).json({ error: "Survey not found" });
+
+    survey.status = "ended";
+    await survey.save();
+    res.json({ message: "Survey ended successfully", survey });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
+// Soft delete survey
+export const deleteSurvey = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const survey = await Survey.findByPk(id);
+    if (!survey) return res.status(404).json({ error: "Survey not found" });
+
+    survey.status = "deleted";
+    await survey.save();
+    res.json({ message: "Survey deleted successfully (soft delete)", survey });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };

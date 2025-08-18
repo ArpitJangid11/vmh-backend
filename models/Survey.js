@@ -52,6 +52,11 @@ const Survey = sequelize.define(
       type: DataTypes.BOOLEAN,
       defaultValue: true,
     },
+    status: {
+      type: DataTypes.ENUM("active", "paused", "ended", "deleted"),
+      defaultValue: "active",
+      allowNull: false,
+    },
   },
   {
     timestamps: true, // adds createdAt and updatedAt

@@ -14,7 +14,8 @@ export const listSurveys = async (req, res) => {
     // ✅ Fetch only active surveys that user has NOT seen
     const surveys = await Survey.findAll({
       where: {
-        isActive: true,
+        // isActive: true,
+        status: "active",
         survey_id: {
           [Op.notIn]: seenSurveyIds.length ? seenSurveyIds : [0], // exclude seen
         },

@@ -17,7 +17,7 @@ const router = express.Router();
 router.get("/me", protect, getProfile);
 router.put("/me", protect, updateProfile);
 router.get("/surveys", protect, mySurveys);
-router.post("/start", protect, createSurveyResponse); // 👈 save response
+router.post("/start", protect, createSurveyResponse);
 router.get("/history/:userId", protect, getUserSurveyHistory);
 router.get("/survey-history", protect, getSurveyHistory);
 
