@@ -1,5 +1,6 @@
-import { User, Reward, Survey } from "../models/index.js";
+import { User, Reward, Survey, Response } from "../models/index.js";
 import { Op } from "sequelize";
+import { Parser } from "json2csv";
 
 export const getAllUsers = async (req, res) => {
   try {
@@ -262,5 +263,67 @@ export const deleteSurvey = async (req, res) => {
     res.json({ message: "Survey deleted successfully (soft delete)", survey });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+};
+
+// 📌 Get all responses for a survey
+export const getSurveyResponses = async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+
+    if (!surveyId) {
+      return res.status(400).json({ message: "Survey ID is required" });
+    }
+
+    const responses = await Response.findAll({
+      where: { surveyId: surveyId },
+      include: [
+        { model: User, attributes: ["id", "fullName", "email"] },
+        { model: Survey, attributes: ["survey_id", "title"] },
+      ],
+    });
+
+    res.json(responses);
+  } catch (error) {
+    console.error("Error fetching survey responses:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export const exportSurveyResponsesCSV = async (req, res) => {
+  try {
+    const { surveyId } = req.params;
+
+    const responses = await Response.findAll({
+      where: { surveyId },
+      include: [{ model: User, attributes: ["id", "fullName", "email"] }],
+    });
+
+    if (!responses.length) {
+      return res.status(404).json({ message: "No responses found" });
+    }
+
+    const formatted = responses.map((r) => ({
+      responseId: r.id,
+      userId: r.userId,
+      userName: r.User?.fullName || "",
+      userEmail: r.User?.email || "",
+      surveyId: r.surveyId,
+      surveyLink: r.surveyLink,
+      answers: JSON.stringify(r.answers),
+      isCompleted: r.isCompleted,
+      progress: r.progress,
+      createdAt: r.createdAt,
+    }));
+
+    const parser = new Parser();
+    const csv = parser.parse(formatted);
+
+    res.header("Content-Type", "text/csv");
+    res.attachment(`survey_${surveyId}_responses.csv`);
+    res.send(csv);
+  } catch (err) {
+    console.error("CSV export error:", err);
+    res.status(500).json({ message: "Failed to export CSV" });
   }
 };

@@ -11,6 +11,7 @@ const Response = sequelize.define(
     },
     userId: { type: DataTypes.INTEGER, allowNull: false },
     surveyId: { type: DataTypes.INTEGER, allowNull: false },
+    surveyLink: { type: DataTypes.STRING, allowNull: false },
     answers: { type: DataTypes.JSONB, allowNull: false, defaultValue: {} },
     isCompleted: { type: DataTypes.BOOLEAN, defaultValue: false },
     progress: { type: DataTypes.INTEGER, defaultValue: 0 },
